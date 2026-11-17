@@ -1,9 +1,15 @@
 name: Release APK
 
-# Push a tag like v1.0.1 (or create a Release with that tag on GitHub) to publish a signed APK.
+# Publish a Release with a tag like v1.0.1 or 1.0.1 to attach a signed APK.
+# To (re)build an existing tag: Actions > Release APK > Run workflow.
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ['v*.*.*', '[0-9]*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag de la versión (ej. 1.0.0 o v1.0.0)'
+        required: true
 
 permissions:
   contents: write
@@ -12,7 +18,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Tag
+        run: echo "TAG=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -30,7 +40,7 @@ jobs:
           done
       - name: Versión desde el tag
         run: |
-          name="${GITHUB_REF_NAME#v}"
+          name="${TAG#v}"
           IFS=. read -r major minor patch <<< "$name"
           echo "TRES_VERSION_NAME=$name" >> "$GITHUB_ENV"
           echo "TRES_VERSION_CODE=$((major * 10000 + minor * 100 + patch))" >> "$GITHUB_ENV"
@@ -53,10 +63,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "Tres-${TRES_VERSION_NAME}.apk" --clobber
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "Tres-${TRES_VERSION_NAME}.apk" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "Tres-${TRES_VERSION_NAME}.apk" --title "Tres ${TRES_VERSION_NAME}" --generate-notes
+            gh release create "$TAG" "Tres-${TRES_VERSION_NAME}.apk" --title "Tres ${TRES_VERSION_NAME}" --generate-notes
           fi
       - name: Borrar keystore
         if: always()
