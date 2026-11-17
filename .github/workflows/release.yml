@@ -1,9 +1,11 @@
 name: Release APK
 
 # Publish a Release with a tag like v1.0.1 or 1.0.1 to attach a signed APK.
-# To (re)build an existing tag: Actions > Release APK > Run workflow.
+# Pushes to main also fill in the latest Release if it has no APK yet.
+# To (re)build a specific tag: Actions > Release APK > Run workflow.
 on:
   push:
+    branches: [main]
     tags: ['v*.*.*', '[0-9]*.*.*']
   workflow_dispatch:
     inputs:
@@ -18,17 +20,35 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Tag
-        run: echo "TAG=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_ENV"
+      - name: Elegir versión
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ "${{ github.ref_type }}" = "branch" ] && [ -z "${{ inputs.tag }}" ]; then
+            tag=$(gh release view --json tagName --jq .tagName 2>/dev/null || true)
+            apks=$(gh release view --json assets --jq '[.assets[].name | select(endswith(".apk"))] | length' 2>/dev/null || echo 0)
+            if [ -z "$tag" ] || [ "$apks" != "0" ]; then echo "Nada que publicar."; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          else
+            tag="${{ inputs.tag || github.ref_name }}"
+          fi
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.pick.outputs.skip != 'true'
         with:
-          ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/setup-java@v4
+          ref: ${{ steps.pick.outputs.tag }}
+      - if: steps.pick.outputs.skip != 'true'
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
+      - if: steps.pick.outputs.skip != 'true'
+        uses: gradle/actions/setup-gradle@v4
       - name: Comprobar secretos de firma
+        if: steps.pick.outputs.skip != 'true'
         env:
           KS: ${{ secrets.TRES_KEYSTORE_BASE64 }}
           KSP: ${{ secrets.TRES_KEYSTORE_PASSWORD }}
@@ -39,19 +59,23 @@ jobs:
             if [ -z "${!v}" ]; then echo "::error::Faltan secretos de firma (TRES_KEYSTORE_BASE64, TRES_KEYSTORE_PASSWORD, TRES_KEY_ALIAS, TRES_KEY_PASSWORD) en Settings > Secrets and variables > Actions."; exit 1; fi
           done
       - name: Versión desde el tag
+        if: steps.pick.outputs.skip != 'true'
         run: |
           name="${TAG#v}"
           IFS=. read -r major minor patch <<< "$name"
           echo "TRES_VERSION_NAME=$name" >> "$GITHUB_ENV"
           echo "TRES_VERSION_CODE=$((major * 10000 + minor * 100 + patch))" >> "$GITHUB_ENV"
       - name: Restaurar keystore
+        if: steps.pick.outputs.skip != 'true'
         env:
           KS: ${{ secrets.TRES_KEYSTORE_BASE64 }}
         run: |
           echo "$KS" | base64 --decode > "$RUNNER_TEMP/release.jks"
           echo "TRES_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-      - run: chmod +x gradlew scripts/test-core.sh && ./scripts/test-core.sh
+      - if: steps.pick.outputs.skip != 'true'
+        run: chmod +x gradlew scripts/test-core.sh && ./scripts/test-core.sh
       - name: Compilar y firmar APK release
+        if: steps.pick.outputs.skip != 'true'
         env:
           TRES_KEYSTORE_PASSWORD: ${{ secrets.TRES_KEYSTORE_PASSWORD }}
           TRES_KEY_ALIAS: ${{ secrets.TRES_KEY_ALIAS }}
@@ -60,6 +84,7 @@ jobs:
           ./gradlew assembleRelease --stacktrace
           cp app/build/outputs/apk/release/app-release.apk "Tres-${TRES_VERSION_NAME}.apk"
       - name: Publicar en Releases
+        if: steps.pick.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
