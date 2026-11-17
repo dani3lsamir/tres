@@ -9,7 +9,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell settings put global sysui_demo_allowed 1
 demo() { adb shell am broadcast -a com.android.systemui.demo -e command "$@" >/dev/null; }
 demo enter; demo clock -e hhmm 0941; demo battery -e level 100 -e plugged false
-demo network -e wifi show -e level 4 -e mobile hide; demo notifications -e visible false
+demo network -e wifi hide -e mobile hide -e airplane hide; demo notifications -e visible false
 
 python3 - > notes.json <<'PY'
 import json, time, datetime
@@ -55,7 +55,7 @@ PY
 start() { adb shell am force-stop $PKG; adb shell am start -W -n $PKG/.MainActivity "$@" >/dev/null; sleep 3; }
 
 start; shot 1-priorities
-tap_text "Completadas"; shot 2-completed
-start --es note_id n1; shot 3-editor
+tap_text "Completadas"; sleep 1; adb shell input swipe 540 1900 540 500 400; shot 2-completed
+start --es note_id n1; sleep 2; adb shell input keyevent 4; shot 3-editor
 start; tap_text "Fecha y repetición"; shot 4-schedule
 adb shell am force-stop $PKG
