@@ -53,10 +53,9 @@ jobs:
           KS: ${{ secrets.TRES_KEYSTORE_BASE64 }}
           KSP: ${{ secrets.TRES_KEYSTORE_PASSWORD }}
           KA: ${{ secrets.TRES_KEY_ALIAS }}
-          KP: ${{ secrets.TRES_KEY_PASSWORD }}
         run: |
-          for v in KS KSP KA KP; do
-            if [ -z "${!v}" ]; then echo "::error::Faltan secretos de firma (TRES_KEYSTORE_BASE64, TRES_KEYSTORE_PASSWORD, TRES_KEY_ALIAS, TRES_KEY_PASSWORD) en Settings > Secrets and variables > Actions."; exit 1; fi
+          for v in KS KSP KA; do
+            if [ -z "${!v}" ]; then echo "::error::Faltan secretos de firma (TRES_KEYSTORE_BASE64, TRES_KEYSTORE_PASSWORD, TRES_KEY_ALIAS) en Settings > Secrets and variables > Actions."; exit 1; fi
           done
       - name: Versión desde el tag
         if: steps.pick.outputs.skip != 'true'
@@ -79,7 +78,8 @@ jobs:
         env:
           TRES_KEYSTORE_PASSWORD: ${{ secrets.TRES_KEYSTORE_PASSWORD }}
           TRES_KEY_ALIAS: ${{ secrets.TRES_KEY_ALIAS }}
-          TRES_KEY_PASSWORD: ${{ secrets.TRES_KEY_PASSWORD }}
+          # PKCS12 keystores share one password for store and key.
+          TRES_KEY_PASSWORD: ${{ secrets.TRES_KEYSTORE_PASSWORD }}
         run: |
           ./gradlew assembleRelease --stacktrace
           cp app/build/outputs/apk/release/app-release.apk "Tres-${TRES_VERSION_NAME}.apk"

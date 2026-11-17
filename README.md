@@ -22,7 +22,7 @@ Para instalarlo, permite en el teléfono la instalación de apps de orígenes de
    keytool -genkeypair -v -keystore tres-release.jks -alias tres -keyalg RSA -keysize 4096 -validity 10000
    [Convert]::ToBase64String([IO.File]::ReadAllBytes("tres-release.jks")) | Set-Clipboard
    ```
-2. En **Settings → Secrets and variables → Actions** crea `TRES_KEYSTORE_BASE64` (lo copiado), `TRES_KEYSTORE_PASSWORD`, `TRES_KEY_ALIAS` (`tres`) y `TRES_KEY_PASSWORD`.
+2. En **Settings → Secrets and variables → Actions** crea `TRES_KEYSTORE_BASE64` (lo copiado), `TRES_KEYSTORE_PASSWORD` y `TRES_KEY_ALIAS` (`tres`).
 3. Crea una Release con un tag como `v1.0.0` (o `git tag v1.0.0` y `git push origin v1.0.0`). GitHub compila, firma y adjunta `Tres-1.0.0.apk`. Cada versión nueva debe tener un número mayor.
 
 ## Compilar en tu PC
