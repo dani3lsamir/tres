@@ -37,7 +37,17 @@ adb shell "cat /data/local/tmp/notes.json | run-as $PKG sh -c 'mkdir -p files &&
 
 shot() { sleep 3; adb exec-out screencap -p > "$OUT/$1.png"; echo "captured $1"; }
 tap_text() {
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null
+  # Retries: the UI dump can be taken before the screen settles.
+  local try
+  for try in 1 2 3 4 5 6; do
+    if tap_text_once "$1"; then return 0; fi
+    sleep 2
+    [ "$try" -eq 3 ] && adb shell input swipe 540 1700 540 1200 300
+  done
+  echo "text not found: $1"; return 1
+}
+tap_text_once() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null || return 1
   adb pull /sdcard/ui.xml "debug/ui-$RANDOM.xml" >/dev/null
   local xy
   xy=$(python3 - "$1" "$(ls -t debug/ui-*.xml | head -1)" <<'PY'
@@ -49,7 +59,7 @@ for node in ET.parse(path).iter("node"):
         print((x1 + x2) // 2, (y1 + y2) // 2); break
 PY
 )
-  [ -n "$xy" ] || { echo "text not found: $1"; return 1; }
+  [ -n "$xy" ] || return 1
   adb shell input tap $xy
 }
 start() { adb shell am force-stop $PKG; adb shell am start -W -n $PKG/.MainActivity "$@" >/dev/null; sleep 3; }
