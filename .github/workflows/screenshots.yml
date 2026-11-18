@@ -5,7 +5,7 @@ name: Emulator screenshots
 on:
   push:
     branches: [main]
-    paths: ['app/src/main/**', 'scripts/screenshots.sh']
+    paths: ['app/src/main/**', 'scripts/screenshots.sh', '.github/workflows/screenshots.yml']
   workflow_dispatch:
 
 jobs:
@@ -33,6 +33,14 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: bash scripts/screenshots.sh
+      # Also emit the images as base64 in the log, for tools that can read logs but not artifacts.
+      - name: Screenshot data (base64)
+        run: |
+          for f in docs/screenshots/*.png; do
+            echo "::group::$f"
+            echo "BEGIN $(basename "$f")"; base64 -w 120 "$f"; echo "END $(basename "$f")"
+            echo "::endgroup::"
+          done
       - if: always()
         uses: actions/upload-artifact@v4
         with:
