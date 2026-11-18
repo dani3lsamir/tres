@@ -111,6 +111,17 @@ public final class NotebookTest {
             b.prioritize("note-4999", 5001); b.prioritize("note-2500", 5002); b.prioritize("note-0", 5003);
             check(b.all().size() == 5000 && b.priorities().get(0).id.equals("note-4999"), "Collection corruption");
         });
+        test("Delete removes a note and frees its priority slot", () -> {
+            Notebook b = empty(); String a1 = b.add("A", 1), a2 = b.add("B", 1);
+            b.prioritize(a1, 2); b.delete(a1);
+            check(b.find(a1) == null && b.all().size() == 1 && b.priorities().isEmpty(), "Delete failed");
+            b.prioritize(a2, 3); check(b.find(a2).priority == 1, "Slot not freed");
+        });
+        test("Deleting completed or missing notes is harmless", () -> {
+            Notebook b = empty(); String id = b.add("Done", 1); b.complete(id, 2);
+            b.delete(id); b.delete(id); b.delete("missing");
+            check(b.all().isEmpty(), "Completed note not deleted");
+        });
         System.out.println("PASSED " + passed + " domain regression tests");
     }
 }

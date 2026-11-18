@@ -55,7 +55,7 @@ public final class NoteStore {
         }
         try {
             JSONObject root = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
-            if (root.getInt("version") != 1) throw new IOException("Versión de notas incompatible.");
+            if (root.getInt("version") != 1) throw new IOException("Incompatible notes version.");
             JSONArray rows = root.getJSONArray("notes");
             List<Note> notes = new ArrayList<>();
             for (int i = 0; i < rows.length(); i++) {
@@ -65,7 +65,7 @@ public final class NoteStore {
             }
             return new Notebook(notes);
         } catch (Exception error) {
-            throw new IOException("No se pudieron leer las notas. Se conserva el archivo original.", error);
+            throw new IOException("Couldn't read your notes. The original file is kept.", error);
         }
     }
 
@@ -77,7 +77,7 @@ public final class NoteStore {
                     .put("created", n.created).put("updated", n.updated).put("done", n.done)
                     .put("priority", n.priority).put("due",n.due).put("repeat",n.repeat).put("completedAt",n.completedAt).put("anchorDay",n.anchorDay).put("nextId",n.nextId));
             bytes = new JSONObject().put("version", 1).put("notes", rows).toString().getBytes(StandardCharsets.UTF_8);
-        } catch (Exception error) { throw new IOException("No se pudieron preparar las notas.", error); }
+        } catch (Exception error) { throw new IOException("Couldn't prepare your notes.", error); }
         FileOutputStream output = null;
         try {
             output = file.startWrite();

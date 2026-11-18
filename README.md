@@ -17,10 +17,9 @@ Capture a thought by voice or text, pick up to three priorities, and keep them o
 - **Due dates and repetition**: daily, weekly or monthly. Completing a repeating task creates the next occurrence; monthly tasks keep their day (Jan 31 → Feb 28 → Mar 31).
 - **Completed notes** stay for 10 days, so you can restore them, and then clean themselves up.
 - **Home screen widget** showing your three priorities: complete them or start a dictation in one tap.
+- **Delete notes** you no longer need, with a confirmation step.
 - **Draft recovery.** Unsaved text is kept if you leave the editor.
 - **Private by design.** Notes are stored only on your phone: no account, no cloud, no tracking, no notifications.
-
-The interface is in Spanish.
 
 ## Download
 Get the latest `Tres-x.y.z.apk` from **[Releases](../../releases/latest)**, open it on your phone and allow installing from unknown sources if Android asks. Requires **Android 8.0** or newer.
@@ -34,7 +33,7 @@ Requirements: JDK 17 and Android SDK platform 34.
 ./gradlew connectedDebugAndroidTest   # storage tests on a device or emulator
 ```
 
-On Windows use `gradlew.bat` and `scripts\test-core.ps1`. Every push is built and tested by GitHub Actions.
+On Windows use `gradlew.bat` and `scripts\test-core.ps1`. Every push is built and tested by GitHub Actions, and changes to the app are launched on an Android emulator that captures the screenshots above.
 
 ## Project structure
 | File | Purpose |

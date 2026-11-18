@@ -25,14 +25,14 @@ public final class Notebook {
         Set<Integer> slots = new HashSet<>();
         for (Note note : notes) {
             if (note.id == null || note.id.trim().isEmpty() || !ids.add(note.id))
-                throw new IllegalArgumentException("Identificador de nota inválido.");
+                throw new IllegalArgumentException("Invalid note id.");
             validText(note.text);
             validateSchedule(note.due,note.repeat);
             if (note.anchorDay < 0 || note.anchorDay > 31 || note.nextId == null)
-                throw new IllegalArgumentException("Repetición inválida.");
+                throw new IllegalArgumentException("Invalid repetition.");
             if (note.priority < 0 || note.priority > 3 || (note.done && note.priority != 0)
                     || (note.priority > 0 && !slots.add(note.priority)))
-                throw new IllegalArgumentException("Prioridades inválidas.");
+                throw new IllegalArgumentException("Invalid priorities.");
         }
     }
 
@@ -54,7 +54,7 @@ public final class Notebook {
     }
 
     public void addCapture(String id, String text, long now) {
-        if (id == null || id.trim().isEmpty()) throw new IllegalArgumentException("Identificador de captura inválido.");
+        if (id == null || id.trim().isEmpty()) throw new IllegalArgumentException("Invalid capture id.");
         if (find(id) != null) return;
         notes.add(new Note(id, validText(text), now, now, false, 0));
     }
@@ -66,13 +66,13 @@ public final class Notebook {
 
     public void prioritize(String id, long now) {
         Note old = required(id);
-        if (old.done) throw new IllegalArgumentException("Restaura la nota antes de priorizarla.");
+        if (old.done) throw new IllegalArgumentException("Restore the note before prioritizing it.");
         if (old.priority > 0) return;
         Set<Integer> used = new HashSet<>();
         for (Note note : notes) used.add(note.priority);
         int slot = 1;
         while (slot <= 3 && used.contains(slot)) slot++;
-        if (slot > 3) throw new IllegalArgumentException("Ya tienes tres prioridades. Libera una primero.");
+        if (slot > 3) throw new IllegalArgumentException("You already have three priorities. Unpin one first.");
         replace(old.copy(old.text,now,false,slot));
     }
 
@@ -95,6 +95,11 @@ public final class Notebook {
         replace(new Note(id,old.text,old.created,now,true,0,old.due,old.repeat,now,old.anchorDay,nextId));
     }
 
+    /** Removes a note; deleting a missing note is a no-op so repeated taps are harmless. */
+    public void delete(String id) {
+        notes.removeIf(n -> n.id.equals(id));
+    }
+
     public void restore(String id, long now) {
         Note old = required(id);
         replace(new Note(id,old.text,old.created,now,false,0,old.due,old.repeat,0,old.anchorDay,old.nextId));
@@ -109,18 +114,18 @@ public final class Notebook {
                 LocalDate month = current.withDayOfMonth(1).plusMonths(1);
                 return month.withDayOfMonth(Math.min(anchor, month.lengthOfMonth()));
             }
-            default: throw new IllegalArgumentException("Repetición inválida.");
+            default: throw new IllegalArgumentException("Invalid repetition.");
         }
     }
 
     public static void validateSchedule(String due, String repeat) {
-        if (due == null || repeat == null || !REPEATS.contains(repeat)) throw new IllegalArgumentException("Repetición inválida.");
+        if (due == null || repeat == null || !REPEATS.contains(repeat)) throw new IllegalArgumentException("Invalid repetition.");
         if (!due.isEmpty()) {
             try {
                 if (!due.matches("\\d{4}-\\d{2}-\\d{2}") || !LocalDate.parse(due).toString().equals(due)) throw new IllegalArgumentException();
-            } catch (RuntimeException error) { throw new IllegalArgumentException("Fecha inválida."); }
+            } catch (RuntimeException error) { throw new IllegalArgumentException("Invalid date."); }
         }
-        if (!repeat.equals("none") && due.isEmpty()) throw new IllegalArgumentException("Elige una fecha para repetir.");
+        if (!repeat.equals("none") && due.isEmpty()) throw new IllegalArgumentException("Pick a date to repeat.");
     }
 
     public void schedule(String id, String due, String repeat, long now) {
@@ -136,7 +141,7 @@ public final class Notebook {
 
     private Note required(String id) {
         Note note = find(id);
-        if (note == null) throw new IllegalArgumentException("La nota ya no está disponible.");
+        if (note == null) throw new IllegalArgumentException("This note is no longer available.");
         return note;
     }
 
@@ -147,8 +152,8 @@ public final class Notebook {
     }
 
     public static String validText(String text) {
-        if (text == null || text.trim().isEmpty()) throw new IllegalArgumentException("Añade algo a la nota.");
-        if (text.length() > MAX_TEXT) throw new IllegalArgumentException("La nota supera los 20.000 caracteres.");
+        if (text == null || text.trim().isEmpty()) throw new IllegalArgumentException("Add something to the note.");
+        if (text.length() > MAX_TEXT) throw new IllegalArgumentException("The note is longer than 20,000 characters.");
         return text.trim();
     }
 }

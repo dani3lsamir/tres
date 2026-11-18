@@ -48,9 +48,9 @@ public final class PriorityWidget extends AppWidgetProvider {
             int[] checks = {R.id.check_one, R.id.check_two, R.id.check_three};
             for (int i = 0; i < 3; i++) {
                 Note note = i < notes.size() ? notes.get(i) : null;
-                views.setTextViewText(labels[i], note == null ? "Elegir prioridad" : note.text);
+                views.setTextViewText(labels[i], note == null ? "Pick a priority" : note.text);
                 views.setTextViewText(checks[i], note == null ? "+" : "○");
-                views.setContentDescription(checks[i], note == null ? "Elegir prioridad" : "Completar " + note.text);
+                views.setContentDescription(checks[i], note == null ? "Pick a priority" : "Complete " + note.text);
                 views.setOnClickPendingIntent(labels[i], open(context, false, note == null ? null : note.id));
                 PendingIntent action = open(context, false, null);
                 if (note != null) {
@@ -75,7 +75,7 @@ public final class PriorityWidget extends AppWidgetProvider {
 
     private static void showError(Context context) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.priority_widget);
-        views.setTextViewText(R.id.widget_title, "Abre Tres para revisar las notas");
+        views.setTextViewText(R.id.widget_title, "Open Tres to check your notes");
         views.setOnClickPendingIntent(R.id.widget_title, open(context, false, null));
         for (int id : new int[]{R.id.check_one, R.id.check_two, R.id.check_three}) views.setViewVisibility(id, View.INVISIBLE);
         AppWidgetManager.getInstance(context).updateAppWidget(new ComponentName(context, PriorityWidget.class), views);
